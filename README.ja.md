@@ -1,6 +1,6 @@
 # ai-chrome-pilot
 
-![Logo](./images/logo.png)
+![Logo](https://github.com/shinshin86/ai-chrome-pilot/blob/main/images/logo.png)
 
 [English version](README.md)
 

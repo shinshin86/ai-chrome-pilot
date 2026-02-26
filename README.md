@@ -1,5 +1,7 @@
 # ai-chrome-pilot
 
+![Logo](https://github.com/shinshin86/ai-chrome-pilot/blob/main/images/logo.png)
+
 [日本語版はこちら](README.ja.md)
 
 A lightweight browser automation server for AI agents, powered by Chrome DevTools Protocol (CDP).
