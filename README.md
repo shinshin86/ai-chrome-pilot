@@ -266,6 +266,28 @@ Change `CDP_PORT` or `CONTROL_PORT`.
 
 Use `NO_SANDBOX=1` if necessary (understand the security implications before using).
 
+## Agent Skills
+
+This project includes [Agent Skills](https://agentskills.io/) in the `skills/` directory that enable AI agents to automate common X (Twitter) workflows:
+
+| Skill | Description |
+| ----- | ----------- |
+| `x-login` | Log in to X via browser (delegates manual login to the user, persists session) |
+| `x-schedule-post` | Schedule a post on X and verify it in the scheduled posts list |
+
+### Using with Claude Code
+
+Copy the skills into `.claude/skills/` (this directory is gitignored):
+
+```bash
+mkdir -p .claude/skills
+cp -r skills/* .claude/skills/
+```
+
+### Using with other agents
+
+Other agent products may look for skills in different locations. Refer to the agent's documentation for the correct path, and copy or symlink the `skills/` directory accordingly.
+
 ## CI
 
 GitHub Actions (`.github/workflows/ci.yml`) runs `npm run lint` and `npm run test`.
