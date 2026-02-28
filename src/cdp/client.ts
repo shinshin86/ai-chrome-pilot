@@ -42,6 +42,22 @@ export class CdpClient {
   }
 
   /**
+   * Connect to the browser-level CDP endpoint via /json/version.
+   * Used for browser-wide commands like Browser.close().
+   */
+  static async connectToBrowser(cdpHttpEndpoint: string): Promise<CdpClient> {
+    const versionUrl = `${cdpHttpEndpoint}/json/version`;
+    const res = await fetch(versionUrl);
+    const info = (await res.json()) as { webSocketDebuggerUrl?: string };
+
+    if (!info.webSocketDebuggerUrl) {
+      throw new Error(`No browser WebSocket URL found at ${cdpHttpEndpoint}`);
+    }
+
+    return CdpClient.connect(info.webSocketDebuggerUrl);
+  }
+
+  /**
    * Connect to a specific page/target by fetching /json/list
    * and connecting to the first page target's webSocketDebuggerUrl.
    */
@@ -151,6 +167,15 @@ export class CdpClient {
       if (handlers.size === 0) {
         this.eventListeners.delete(method);
       }
+    }
+  }
+
+  async closeBrowser(): Promise<void> {
+    if (!this.isConnected) return;
+    try {
+      await this.send('Browser.close', {});
+    } catch {
+      // Browser may already be closing; ignore errors
     }
   }
 

@@ -73,6 +73,7 @@ export async function launchChrome(options: LaunchChromeOptions): Promise<Chrome
     `--user-data-dir=${userDataDir}`,
     '--no-first-run',
     '--no-default-browser-check',
+    '--disable-session-crashed-bubble',
     'about:blank'
   ];
 

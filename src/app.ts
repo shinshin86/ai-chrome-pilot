@@ -173,7 +173,15 @@ export class App {
       this.sharedClient.close();
     }
 
+    // Gracefully close browser via CDP before killing the process
     if (this.chrome) {
+      try {
+        const browserClient = await CdpClient.connectToBrowser(this.chrome.cdpEndpoint);
+        await browserClient.closeBrowser();
+        browserClient.close();
+      } catch {
+        // If CDP close fails, fall back to process kill
+      }
       closeTasks.push(this.chrome.close());
     }
 
