@@ -67,6 +67,7 @@ export class CdpClient {
     const targets = (await res.json()) as Array<{
       id: string;
       type: string;
+      url?: string;
       webSocketDebuggerUrl?: string;
     }>;
 
@@ -74,7 +75,9 @@ export class CdpClient {
     if (targetId) {
       target = targets.find((t) => t.id === targetId);
     } else {
-      target = targets.find((t) => t.type === 'page');
+      const pages = targets.filter((t) => t.type === 'page');
+      // Prefer a non-about:blank page if available
+      target = pages.find((t) => t.url && t.url !== 'about:blank') ?? pages[0];
     }
 
     if (!target?.webSocketDebuggerUrl) {

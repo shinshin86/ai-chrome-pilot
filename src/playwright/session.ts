@@ -9,7 +9,9 @@ async function getOrCreatePage(browser: Browser): Promise<Page> {
     context = await browser.newContext();
   }
 
-  let page: Page | undefined = context.pages()[0];
+  const pages = context.pages();
+  // Prefer a non-about:blank page if available
+  let page: Page | undefined = pages.find((p) => p.url() !== 'about:blank') ?? pages[0];
   if (!page) {
     page = await context.newPage();
   }
