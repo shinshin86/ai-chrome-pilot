@@ -91,7 +91,7 @@ CSS セレクタを直接指定する API です。多くの場合、上記の r
 | Endpoint          | Method | Body                    | Response                       |
 | ----------------- | ------ | ----------------------- | ------------------------------ |
 | `/tabs`           | GET    | -                       | `{ ok, tabs }`                 |
-| `/tabs/open`      | POST   | `{ "url": "..." }`      | `{ ok, targetId, title, url }` |
+| `/tabs/open`      | POST   | `{ "url": "..." }`（省略可。デフォルト: `about:blank`） | `{ ok, targetId, title, url }` |
 | `/tabs/focus`     | POST   | `{ "targetId": "..." }` | `{ ok: true }`                 |
 | `/tabs/:targetId` | DELETE | -                       | `{ ok: true }`                 |
 
@@ -101,7 +101,7 @@ CSS セレクタを直接指定する API です。多くの場合、上記の r
 | --------- | ------ | ---------------------------------------------- | ---------------------------------- |
 | `/dialog` | GET    | -                                              | `{ ok, pending, type?, message? }` |
 | `/dialog` | POST   | `{ "accept": true, "promptText": "..." }`      | `{ ok: true }`                     |
-| `/wait`   | POST   | `{ "text": "..." }` or `{ "selector": "..." }` | `{ ok: true }`                     |
+| `/wait`   | POST   | `{ "text": "..." }` or `{ "selector": "..." }`（`timeout` ミリ秒を任意指定可） | `{ ok: true }`                     |
 
 ### Cookie 管理
 
@@ -109,7 +109,7 @@ CSS セレクタを直接指定する API です。多くの場合、上記の r
 | ---------- | ------ | ------------------------------------ | ----------------- |
 | `/cookies` | GET    | -                                    | `{ ok, cookies }` |
 | `/cookies` | POST   | `{ "cookies": [...] }`               | `{ ok: true }`    |
-| `/cookies` | DELETE | `{ "name": "...", "domain": "..." }` | `{ ok: true }`    |
+| `/cookies` | DELETE | `{ "name": "...", "domain": "..." }` または `{}`（全削除） | `{ ok: true }`    |
 
 ## 使用例
 
@@ -166,6 +166,7 @@ curl -s http://127.0.0.1:3333/screenshot -o screenshot.png
 | `CHROME_PATH`      | (auto)                       | Chrome 実行ファイルパス                       |
 | `PROFILE_NAME`     | default                      | プロファイル名                                |
 | `PROFILE_DIR`      | ~/.ai-chrome-pilot/profiles/ | プロファイルディレクトリ                      |
+| `USER_DATA_DIR`    | (unset)                      | Chrome の user data dir を明示指定（profile ベースのパス選択より優先） |
 | `EPHEMERAL`        | 0                            | 一時セッション (1=有効、セッション保持しない) |
 | `RELAY_ENABLED`    | 0                            | リレーモード (1=Chrome 拡張経由)              |
 | `RELAY_AUTH_TOKEN` | (empty)                      | リレー WebSocket 認証トークン                 |
@@ -265,6 +266,29 @@ CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npm r
 ### Linux で sandbox エラー
 
 必要に応じて `NO_SANDBOX=1` を利用してください（セキュリティリスクを理解した上で使用）。
+
+## Agent Skills
+
+このプロジェクトには、X (Twitter) の定型操作を自動化するための [Agent Skills](https://agentskills.io/) が `skills/` ディレクトリに含まれています。
+
+| Skill | Description |
+| ----- | ----------- |
+| `x-login` | ブラウザで X にログイン（ログイン操作はユーザーが手動実施、セッションを永続化） |
+| `x-schedule-post` | X の予約投稿を作成し、予約済み一覧で確認 |
+| `x-get-notifications` | X の通知を取得し、返信/引用リポストを抽出 |
+
+### Claude Code で使う
+
+`.claude/skills/`（gitignore 対象）へ skills をコピーしてください。
+
+```bash
+mkdir -p .claude/skills
+cp -r skills/* .claude/skills/
+```
+
+### 他エージェントで使う
+
+エージェント製品ごとに参照する skills の配置先が異なる場合があります。各製品のドキュメントに従って `skills/` をコピーまたはシンボリックリンクしてください。
 
 ## CI
 

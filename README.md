@@ -91,7 +91,7 @@ These endpoints use CSS selectors directly. The ref-based API above is recommend
 | Endpoint          | Method | Body                    | Response                       |
 | ----------------- | ------ | ----------------------- | ------------------------------ |
 | `/tabs`           | GET    | -                       | `{ ok, tabs }`                 |
-| `/tabs/open`      | POST   | `{ "url": "..." }`      | `{ ok, targetId, title, url }` |
+| `/tabs/open`      | POST   | `{ "url": "..." }` (optional, default: `about:blank`) | `{ ok, targetId, title, url }` |
 | `/tabs/focus`     | POST   | `{ "targetId": "..." }` | `{ ok: true }`                 |
 | `/tabs/:targetId` | DELETE | -                       | `{ ok: true }`                 |
 
@@ -101,7 +101,7 @@ These endpoints use CSS selectors directly. The ref-based API above is recommend
 | --------- | ------ | ---------------------------------------------- | ---------------------------------- |
 | `/dialog` | GET    | -                                              | `{ ok, pending, type?, message? }` |
 | `/dialog` | POST   | `{ "accept": true, "promptText": "..." }`      | `{ ok: true }`                     |
-| `/wait`   | POST   | `{ "text": "..." }` or `{ "selector": "..." }` | `{ ok: true }`                     |
+| `/wait`   | POST   | `{ "text": "..." }` or `{ "selector": "..." }` (+ optional `timeout` in ms) | `{ ok: true }`                     |
 
 ### Cookie Management
 
@@ -109,7 +109,7 @@ These endpoints use CSS selectors directly. The ref-based API above is recommend
 | ---------- | ------ | ------------------------------------ | ----------------- |
 | `/cookies` | GET    | -                                    | `{ ok, cookies }` |
 | `/cookies` | POST   | `{ "cookies": [...] }`               | `{ ok: true }`    |
-| `/cookies` | DELETE | `{ "name": "...", "domain": "..." }` | `{ ok: true }`    |
+| `/cookies` | DELETE | `{ "name": "...", "domain": "..." }` or `{}` (clear all) | `{ ok: true }`    |
 
 ## Usage Examples
 
@@ -166,6 +166,7 @@ curl -s http://127.0.0.1:3333/screenshot -o screenshot.png
 | `CHROME_PATH`      | (auto)                       | Chrome executable path                   |
 | `PROFILE_NAME`     | default                      | Profile name                             |
 | `PROFILE_DIR`      | ~/.ai-chrome-pilot/profiles/ | Profile directory                        |
+| `USER_DATA_DIR`    | (unset)                      | Explicit Chrome user data dir (overrides profile-based path selection) |
 | `EPHEMERAL`        | 0                            | Ephemeral session (1=enabled, no persist)|
 | `RELAY_ENABLED`    | 0                            | Relay mode (1=via Chrome extension)      |
 | `RELAY_AUTH_TOKEN`  | (empty)                      | Relay WebSocket auth token               |
@@ -274,6 +275,7 @@ This project includes [Agent Skills](https://agentskills.io/) in the `skills/` d
 | ----- | ----------- |
 | `x-login` | Log in to X via browser (delegates manual login to the user, persists session) |
 | `x-schedule-post` | Schedule a post on X and verify it in the scheduled posts list |
+| `x-get-notifications` | Retrieve X notifications and filter for replies / quote reposts |
 
 ### Using with Claude Code
 
