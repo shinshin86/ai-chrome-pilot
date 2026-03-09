@@ -29,7 +29,7 @@ If not running, start it:
 
 ```bash
 HEADLESS=0 PROFILE_NAME=<profile_name> npx tsx src/index.ts &
-sleep 5 && curl -s http://127.0.0.1:3333/health
+sleep 3 && curl -s http://127.0.0.1:3333/health
 ```
 
 ### 3. Navigate to notifications page
@@ -40,10 +40,10 @@ curl -s -X POST http://127.0.0.1:3333/goto \
   -d '{"url":"https://x.com/notifications"}'
 ```
 
-After `sleep 3`, take a screenshot to confirm the page loaded and the user is logged in.
+After `sleep 2`, take a screenshot to confirm the page loaded and the user is logged in.
 
 ```bash
-sleep 3 && curl -s http://127.0.0.1:3333/screenshot -o /tmp/x_notifications.png
+sleep 2 && curl -s http://127.0.0.1:3333/screenshot -o /tmp/x_notifications.png
 ```
 
 View `/tmp/x_notifications.png` with the Read tool.
@@ -76,7 +76,7 @@ curl -s -X POST http://127.0.0.1:3333/eval \
   -d '{"js":"window.scrollBy(0, window.innerHeight * 2)"}'
 ```
 
-After `sleep 2`, take another snapshot. Repeat 2-3 times to gather sufficient notifications.
+After `sleep 1`, take another snapshot. Repeat 2-3 times to gather sufficient notifications.
 
 ### 7. Filter for replies and quote reposts
 
@@ -105,7 +105,7 @@ kill $(lsof -ti:9222) 2>/dev/null
 
 ## Important notes
 
-- Add `sleep 2-3` between operations to wait for page loads
+- Add `sleep 1-2` between operations to wait for page loads
 - Always use `/snapshot` before each action to get fresh refs
 - The notifications page may require scrolling to load all notifications (infinite scroll)
 - X's UI is dynamic; notification formats may vary slightly

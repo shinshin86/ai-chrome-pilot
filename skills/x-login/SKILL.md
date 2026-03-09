@@ -32,7 +32,7 @@ HEADLESS=0 PROFILE_NAME=<profile_name> npx tsx src/index.ts &
 ### 3. Verify server is ready
 
 ```bash
-sleep 5 && curl -s http://127.0.0.1:3333/health
+sleep 3 && curl -s http://127.0.0.1:3333/health
 ```
 
 Expect `{"ok":true}`.
@@ -50,7 +50,7 @@ curl -s -X POST http://127.0.0.1:3333/goto \
 Take a screenshot and verify whether the user is already logged in.
 
 ```bash
-sleep 3 && curl -s http://127.0.0.1:3333/screenshot -o /tmp/x_login_check.png
+sleep 2 && curl -s http://127.0.0.1:3333/screenshot -o /tmp/x_login_check.png
 ```
 
 View `/tmp/x_login_check.png` with the Read tool.

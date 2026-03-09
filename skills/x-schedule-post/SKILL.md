@@ -32,7 +32,7 @@ If not running, start it:
 
 ```bash
 HEADLESS=0 PROFILE_NAME=<profile_name> npx tsx src/index.ts &
-sleep 5 && curl -s http://127.0.0.1:3333/health
+sleep 3 && curl -s http://127.0.0.1:3333/health
 ```
 
 ### 2. Navigate to X home
@@ -43,7 +43,7 @@ curl -s -X POST http://127.0.0.1:3333/goto \
   -d '{"url":"https://x.com"}'
 ```
 
-After `sleep 3`, take a screenshot to confirm the user is logged in.
+After `sleep 2`, take a screenshot to confirm the user is logged in.
 
 ### 3. Enter post text
 
@@ -77,7 +77,7 @@ curl -s -X POST http://127.0.0.1:3333/act \
   -d '{"ref":"<schedule_button_ref>","action":"click"}'
 ```
 
-After `sleep 2`, use `/snapshot` to inspect the schedule dialog elements.
+After `sleep 1`, use `/snapshot` to inspect the schedule dialog elements.
 
 ### 5. Set the date and time
 
@@ -145,7 +145,7 @@ Confirm the post appears in the scheduled posts list:
 4. Use `/snapshot` to verify the post text and scheduled date/time are correct
 
 ```bash
-# Add sleep 2 between each action
+# Add sleep 1 between each action
 
 # 1. Click the post button
 curl -s -X POST http://127.0.0.1:3333/act \
@@ -184,7 +184,7 @@ kill $(lsof -ti:9222) 2>/dev/null
 
 ## Important notes
 
-- Add `sleep 2-3` between operations to wait for page loads
+- Add `sleep 1-2` between operations to wait for page loads
 - Always use `/snapshot` before each action to get fresh refs (refs change when the page navigates or dialogs open/close)
 - X's UI is dynamic; use both snapshots and screenshots to identify the correct elements
 - After setting the date/time, **always** click the "確認する" (Confirm) or "更新" (Update) button to apply the changes
