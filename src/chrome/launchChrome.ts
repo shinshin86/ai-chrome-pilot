@@ -74,7 +74,7 @@ export async function launchChrome(options: LaunchChromeOptions): Promise<Chrome
     '--no-first-run',
     '--no-default-browser-check',
     '--disable-session-crashed-bubble',
-    'about:blank'
+    '--hide-crash-restore-bubble'
   ];
 
   if (options.headless) {

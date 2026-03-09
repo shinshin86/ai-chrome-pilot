@@ -59,24 +59,30 @@ export class App {
     this.chrome = await launchChrome(launchOptions);
     const cdpEndpoint = this.chrome.cdpEndpoint;
 
-    // Always use CdpBrowserSession as the base session
-    this.session = await CdpBrowserSession.connect(cdpEndpoint);
+    let selectedTargetId: string | undefined;
 
-    // Create a shared persistent CDP connection for snapshot/act/cookies routes
-    this.sharedClient = await CdpClient.connectToPage(cdpEndpoint);
-    const sharedProxy = createSharedProxy(this.sharedClient);
-
-    // Auto-detect Playwright and create enhanced session if available
+    // Auto-detect Playwright and use its selected page as the canonical target when available
     const playwrightAvailable = await detectPlaywright();
     if (playwrightAvailable) {
       try {
         const { PlaywrightCdpSession } = await import('./playwright/session.js');
-        this.playwrightSession = await PlaywrightCdpSession.connect(cdpEndpoint);
+        const playwrightSession = await PlaywrightCdpSession.connect(cdpEndpoint);
+        selectedTargetId = playwrightSession.getTargetId();
+        this.playwrightSession = playwrightSession;
       } catch {
         // Playwright import succeeded but connection failed — continue without it
         console.warn('[startup] Playwright detected but connection failed, using CDP-only');
       }
     }
+
+    if (!selectedTargetId) {
+      selectedTargetId = (await CdpClient.resolvePageTarget(cdpEndpoint)).id;
+    }
+
+    // Keep all CDP-based routes on the same target as the chosen browser page
+    this.session = await CdpBrowserSession.connect(cdpEndpoint, selectedTargetId);
+    this.sharedClient = await CdpClient.connectToPage(cdpEndpoint, selectedTargetId);
+    const sharedProxy = createSharedProxy(this.sharedClient);
 
     const mode = this.playwrightSession ? 'hybrid (Playwright available)' : 'CDP-only';
 

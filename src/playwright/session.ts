@@ -3,6 +3,20 @@ import { chromium } from 'playwright-core';
 
 import type { BrowserSession, DialogInfo } from './types.js';
 
+function pagePriority(page: Page): number {
+  const url = page.url();
+  if (/^https?:\/\//.test(url)) {
+    return 0;
+  }
+  if (url === 'about:blank') {
+    return 1;
+  }
+  if (!url.startsWith('chrome://')) {
+    return 2;
+  }
+  return 3;
+}
+
 async function getOrCreatePage(browser: Browser): Promise<Page> {
   let context: BrowserContext | undefined = browser.contexts()[0];
   if (!context) {
@@ -10,8 +24,8 @@ async function getOrCreatePage(browser: Browser): Promise<Page> {
   }
 
   const pages = context.pages();
-  // Prefer a non-about:blank page if available
-  let page: Page | undefined = pages.find((p) => p.url() !== 'about:blank') ?? pages[0];
+  const sortedPages = [...pages].sort((left, right) => pagePriority(left) - pagePriority(right));
+  let page: Page | undefined = sortedPages[0];
   if (!page) {
     page = await context.newPage();
   }
@@ -21,15 +35,35 @@ async function getOrCreatePage(browser: Browser): Promise<Page> {
   return page;
 }
 
+async function resolvePageTargetId(page: Page): Promise<string> {
+  const session = await page.context().newCDPSession(page);
+  try {
+    const result = (await session.send('Target.getTargetInfo')) as {
+      targetInfo?: { targetId?: string };
+    };
+    const targetId = result.targetInfo?.targetId;
+    if (!targetId) {
+      throw new Error('Failed to resolve Playwright target ID');
+    }
+    return targetId;
+  } finally {
+    await session.detach().catch(() => {
+      // ignore detach error
+    });
+  }
+}
+
 export class PlaywrightCdpSession implements BrowserSession {
   private readonly browser: Browser;
   private readonly page: Page;
+  private readonly targetId: string;
   private closed = false;
   private pendingDialog: Dialog | undefined;
 
-  private constructor(browser: Browser, page: Page) {
+  private constructor(browser: Browser, page: Page, targetId: string) {
     this.browser = browser;
     this.page = page;
+    this.targetId = targetId;
     this.browser.on('disconnected', () => {
       this.closed = true;
     });
@@ -43,7 +77,12 @@ export class PlaywrightCdpSession implements BrowserSession {
   static async connect(cdpEndpoint: string): Promise<PlaywrightCdpSession> {
     const browser = await chromium.connectOverCDP(cdpEndpoint);
     const page = await getOrCreatePage(browser);
-    return new PlaywrightCdpSession(browser, page);
+    const targetId = await resolvePageTargetId(page);
+    return new PlaywrightCdpSession(browser, page, targetId);
+  }
+
+  getTargetId(): string {
+    return this.targetId;
   }
 
   private ensureOpen(): void {

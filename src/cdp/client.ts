@@ -21,6 +21,31 @@ interface PendingRequest {
 
 export type CdpEventHandler = (params: Record<string, unknown>) => void;
 
+export interface CdpTargetInfo {
+  id: string;
+  type: string;
+  url?: string;
+  title?: string;
+  webSocketDebuggerUrl?: string;
+}
+
+function isWebPageTarget(target: CdpTargetInfo): boolean {
+  return typeof target.url === 'string' && /^https?:\/\//.test(target.url);
+}
+
+function choosePageTarget(targets: CdpTargetInfo[], targetId?: string): CdpTargetInfo | undefined {
+  if (targetId) {
+    return targets.find((target) => target.id === targetId);
+  }
+
+  const pages = targets.filter((target) => target.type === 'page');
+  return (
+    pages.find((target) => isWebPageTarget(target)) ??
+    pages.find((target) => target.url === 'about:blank') ??
+    pages[0]
+  );
+}
+
 /**
  * Minimal CDP WebSocket client for direct protocol communication.
  * Used for Accessibility, DOM, Input, and Network domain commands
@@ -57,34 +82,37 @@ export class CdpClient {
     return CdpClient.connect(info.webSocketDebuggerUrl);
   }
 
-  /**
-   * Connect to a specific page/target by fetching /json/list
-   * and connecting to the first page target's webSocketDebuggerUrl.
-   */
-  static async connectToPage(cdpHttpEndpoint: string, targetId?: string): Promise<CdpClient> {
+  static async listTargets(cdpHttpEndpoint: string): Promise<CdpTargetInfo[]> {
     const listUrl = `${cdpHttpEndpoint}/json/list`;
     const res = await fetch(listUrl);
-    const targets = (await res.json()) as Array<{
-      id: string;
-      type: string;
-      url?: string;
-      webSocketDebuggerUrl?: string;
-    }>;
+    return (await res.json()) as CdpTargetInfo[];
+  }
 
-    let target;
-    if (targetId) {
-      target = targets.find((t) => t.id === targetId);
-    } else {
-      const pages = targets.filter((t) => t.type === 'page');
-      // Prefer a non-about:blank page if available
-      target = pages.find((t) => t.url && t.url !== 'about:blank') ?? pages[0];
-    }
+  static async resolvePageTarget(
+    cdpHttpEndpoint: string,
+    targetId?: string
+  ): Promise<CdpTargetInfo> {
+    const targets = await CdpClient.listTargets(cdpHttpEndpoint);
+    const target = choosePageTarget(targets, targetId);
 
     if (!target?.webSocketDebuggerUrl) {
       throw new Error(`No suitable CDP target found at ${cdpHttpEndpoint}`);
     }
 
-    return CdpClient.connect(target.webSocketDebuggerUrl);
+    return target;
+  }
+
+  /**
+   * Connect to a specific page/target by fetching /json/list
+   * and connecting to the first page target's webSocketDebuggerUrl.
+   */
+  static async connectToPage(cdpHttpEndpoint: string, targetId?: string): Promise<CdpClient> {
+    const target = await CdpClient.resolvePageTarget(cdpHttpEndpoint, targetId);
+    const endpoint = target.webSocketDebuggerUrl;
+    if (!endpoint) {
+      throw new Error(`No suitable CDP target found at ${cdpHttpEndpoint}`);
+    }
+    return CdpClient.connect(endpoint);
   }
 
   private open(): Promise<void> {

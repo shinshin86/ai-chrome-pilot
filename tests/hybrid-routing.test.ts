@@ -100,26 +100,26 @@ describe('hybrid routing (playwrightSession provided)', () => {
     expect(cdpSession.type).not.toHaveBeenCalled();
   });
 
-  test('POST /eval always uses CDP session', async () => {
+  test('POST /eval uses playwrightSession when available', async () => {
     const { app, cdpSession, pwSession } = createHybridServer();
     const local = await requestLocal(app);
 
     await local.agent.post('/eval').send({ js: '1+1' });
     await local.close();
 
-    expect(cdpSession.evaluate).toHaveBeenCalledWith('1+1');
-    expect(pwSession.evaluate).not.toHaveBeenCalled();
+    expect(pwSession.evaluate).toHaveBeenCalledWith('1+1');
+    expect(cdpSession.evaluate).not.toHaveBeenCalled();
   });
 
-  test('GET /screenshot always uses CDP session', async () => {
+  test('GET /screenshot uses playwrightSession when available', async () => {
     const { app, cdpSession, pwSession } = createHybridServer();
     const local = await requestLocal(app);
 
     await local.agent.get('/screenshot');
     await local.close();
 
-    expect(cdpSession.screenshot).toHaveBeenCalledTimes(1);
-    expect(pwSession.screenshot).not.toHaveBeenCalled();
+    expect(pwSession.screenshot).toHaveBeenCalledTimes(1);
+    expect(cdpSession.screenshot).not.toHaveBeenCalled();
   });
 
   test('POST /wait uses playwrightSession when available', async () => {

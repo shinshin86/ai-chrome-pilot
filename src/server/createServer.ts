@@ -133,7 +133,7 @@ export function createControlServer(options: CreateControlServerOptions): Expres
 
       const body = bodyOf(req);
       const js = requireString(body.js, 'js');
-      const result = await options.session.evaluate(js);
+      const result = await preferred.evaluate(js);
       res.json({ ok: true, result });
     })
   );
@@ -141,7 +141,7 @@ export function createControlServer(options: CreateControlServerOptions): Expres
   app.get(
     '/screenshot',
     asyncHandler(async (_req, res) => {
-      const png = await options.session.screenshot();
+      const png = await preferred.screenshot();
       res.setHeader('Content-Type', 'image/png');
       res.status(200).send(png);
     })

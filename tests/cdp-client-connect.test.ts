@@ -111,6 +111,67 @@ describe('CdpClient.connectToPage', () => {
     );
   });
 
+  test('prefers about:blank over chrome:// internal pages', async () => {
+    const targets = [
+      {
+        id: 'omnibox',
+        type: 'page',
+        url: 'chrome://omnibox-popup.top-chrome/',
+        webSocketDebuggerUrl: 'ws://127.0.0.1:9222/devtools/page/omnibox'
+      },
+      {
+        id: 'blank',
+        type: 'page',
+        url: 'about:blank',
+        webSocketDebuggerUrl: 'ws://127.0.0.1:9222/devtools/page/blank'
+      }
+    ];
+
+    vi.mocked(globalThis.fetch).mockResolvedValue({
+      json: () => Promise.resolve(targets)
+    } as Response);
+
+    await CdpClient.connectToPage('http://127.0.0.1:9222');
+
+    // Should connect to about:blank, not chrome:// internal page
+    expect(connectSpy).toHaveBeenCalledWith(
+      'ws://127.0.0.1:9222/devtools/page/blank'
+    );
+  });
+
+  test('prefers https page over chrome:// and about:blank', async () => {
+    const targets = [
+      {
+        id: 'omnibox',
+        type: 'page',
+        url: 'chrome://omnibox-popup.top-chrome/',
+        webSocketDebuggerUrl: 'ws://127.0.0.1:9222/devtools/page/omnibox'
+      },
+      {
+        id: 'blank',
+        type: 'page',
+        url: 'about:blank',
+        webSocketDebuggerUrl: 'ws://127.0.0.1:9222/devtools/page/blank'
+      },
+      {
+        id: 'real',
+        type: 'page',
+        url: 'https://x.com/notifications',
+        webSocketDebuggerUrl: 'ws://127.0.0.1:9222/devtools/page/real'
+      }
+    ];
+
+    vi.mocked(globalThis.fetch).mockResolvedValue({
+      json: () => Promise.resolve(targets)
+    } as Response);
+
+    await CdpClient.connectToPage('http://127.0.0.1:9222');
+
+    expect(connectSpy).toHaveBeenCalledWith(
+      'ws://127.0.0.1:9222/devtools/page/real'
+    );
+  });
+
   test('skips non-page targets when selecting', async () => {
     const targets = [
       {

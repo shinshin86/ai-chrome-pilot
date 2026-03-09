@@ -25,8 +25,8 @@ export class CdpBrowserSession implements BrowserSession {
    * Connect directly to a CDP HTTP endpoint (e.g. http://127.0.0.1:9222).
    * The session owns the client and will close it on session.close().
    */
-  static async connect(cdpHttpEndpoint: string): Promise<CdpBrowserSession> {
-    const client = await CdpClient.connectToPage(cdpHttpEndpoint);
+  static async connect(cdpHttpEndpoint: string, targetId?: string): Promise<CdpBrowserSession> {
+    const client = await CdpClient.connectToPage(cdpHttpEndpoint, targetId);
     const session = new CdpBrowserSession(client, true);
     await session.enableDomains();
     return session;
