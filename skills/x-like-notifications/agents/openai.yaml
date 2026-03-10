@@ -1,0 +1,4 @@
+interface:
+  display_name: "X Like Notifications"
+  short_description: "Like selected unliked X notifications."
+  default_prompt: "Use $x-like-notifications to open X notifications, find reply or quote notifications that match my criteria, and like only the unliked matches."

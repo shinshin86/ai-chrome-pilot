@@ -1,12 +1,14 @@
 ---
 name: x-get-notifications
-description: Get notifications from X (Twitter), filtering for replies and quote reposts. Uses the ai-chrome-pilot server to navigate to the notifications page and extract relevant notifications via snapshots.
+description: Inspect notifications on X (Twitter) through ai-chrome-pilot and extract replies or quote reposts without performing likes or other engagement actions. Use when the user wants a read-only pass over X notifications, a candidate list for later review, or a safe pre-check before using another skill such as x-like-notifications.
 compatibility: Requires ai-chrome-pilot server (npx tsx src/index.ts) and Google Chrome installed
 ---
 
 # X (Twitter) Get Notifications
 
 Retrieve notifications from X via ai-chrome-pilot, filtering for replies and quote reposts.
+
+Keep this skill read-only. Do not like, repost, reply, or otherwise engage with notifications here.
 
 ## Prerequisites
 
@@ -95,6 +97,8 @@ Summarize the filtered notifications:
 - For each quote repost: show who quoted, the quote text, and the original post
 
 Group results by type (replies first, then quote reposts).
+
+If the user later wants to like some of these notifications, hand off to `x-like-notifications` with explicit filters such as type, actor, text substring, date, or limit.
 
 ### 9. Stop the server (if requested by the user)
 
