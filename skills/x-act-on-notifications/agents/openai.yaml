@@ -1,0 +1,4 @@
+interface:
+  display_name: "X Act On Notifications"
+  short_description: "Act on selected X notifications safely."
+  default_prompt: "Use $x-act-on-notifications to open X notifications, find the notifications that match my criteria, and perform only the requested action such as like, bookmark, or repost."

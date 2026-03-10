@@ -98,7 +98,7 @@ Summarize the filtered notifications:
 
 Group results by type (replies first, then quote reposts).
 
-If the user later wants to like some of these notifications, hand off to `x-like-notifications` with explicit filters such as type, actor, text substring, date, or limit.
+If the user later wants to act on some of these notifications, hand off to `x-act-on-notifications` with explicit filters such as action, type, actor, text substring, date, or limit.
 
 ### 9. Stop the server (if requested by the user)
 
