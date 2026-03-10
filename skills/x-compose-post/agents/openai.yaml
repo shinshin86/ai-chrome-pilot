@@ -1,0 +1,4 @@
+interface:
+  display_name: "X Compose Post"
+  short_description: "Create X posts, replies, quotes, and schedules."
+  default_prompt: "Use $x-compose-post to compose a post on X, choosing normal post, reply, quote, or schedule mode based on my request."

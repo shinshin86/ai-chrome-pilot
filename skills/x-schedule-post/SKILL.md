@@ -1,12 +1,14 @@
 ---
 name: x-schedule-post
-description: Schedule a post on X (Twitter) and verify it was successfully scheduled. Uses the ai-chrome-pilot server to control the browser, set the post text and date/time, and confirm the scheduled post appears in the scheduled posts list.
+description: Schedule a post on X (Twitter) and verify it was successfully scheduled. Use this when the task is specifically about scheduling and scheduled-post verification; prefer x-compose-post for general post creation, replies, quote posts, or mixed posting workflows.
 compatibility: Requires ai-chrome-pilot server (npx tsx src/index.ts) and Google Chrome installed
 ---
 
 # X (Twitter) Schedule Post
 
 Schedule a post on X via ai-chrome-pilot and verify it appears in the scheduled posts list.
+
+Treat this as the schedule-focused variant of `x-compose-post`. If the user wants a normal post, reply, or quote post, use `x-compose-post` instead.
 
 ## Prerequisites
 
