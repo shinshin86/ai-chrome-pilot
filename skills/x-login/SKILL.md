@@ -15,9 +15,9 @@ Log in to X via ai-chrome-pilot and persist the session to a browser profile.
 
 ## Steps
 
-### 1. Ask the user for a profile name
+### 1. Resolve the profile name
 
-Ask which profile name to use (default is `default`). The profile determines where browser data is stored (`~/.ai-chrome-pilot/profiles/<profile_name>/`).
+Use `default` unless the user explicitly requested another profile. The profile determines where browser data is stored (`~/.ai-chrome-pilot/profiles/<profile_name>/`).
 
 ### 2. Start the server
 
@@ -57,7 +57,7 @@ View `/tmp/x_login_check.png` with the Read tool.
 
 ### 6. Request manual login if needed
 
-If not logged in, **ask the user to log in manually**. Never attempt to enter credentials automatically.
+If not logged in, ask the user to log in manually in the opened browser window. Never attempt to enter credentials automatically.
 
 Example message:
 > The Chrome browser window is open. Please log in to X in the browser. Let me know when you're done.
@@ -75,5 +75,6 @@ After successful login, inform the user:
 
 ## Important notes
 
+- Do not ask which profile to use unless the user explicitly needs a non-`default` profile
 - Always ask the user to log in manually. Never auto-fill passwords or authentication credentials.
 - Do not use `EPHEMERAL=1` if the session needs to be persisted.

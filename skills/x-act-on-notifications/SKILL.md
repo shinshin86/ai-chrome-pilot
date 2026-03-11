@@ -7,7 +7,7 @@ description: Perform selected actions on X (Twitter) notifications through ai-ch
 
 Use ai-chrome-pilot to inspect X notifications, build a candidate list, and perform only the requested action on the notifications that match the user's criteria.
 
-Keep the skill profile-agnostic. Ask for the profile name at runtime instead of hardcoding any specific profile.
+Keep the skill profile-agnostic. Use `default` unless the user explicitly requested another profile.
 
 Use this skill for notification actions. If the user only wants to inspect notifications first, use `x-get-notifications` instead. If the user wants to reply or quote-post from a target post, use `x-compose-post`.
 
@@ -28,9 +28,9 @@ Do not overload this skill with reply or quote composition. Treat those as posti
 
 If X shows a login screen, stop and use `x-login` first.
 
-## Inputs To Confirm
+## Inputs To Resolve
 
-Confirm these before acting:
+Resolve these before acting:
 
 - `profile_name`: default to `default` if unspecified
 - `action`: one of `like`, `bookmark`, `repost`
@@ -38,7 +38,15 @@ Confirm these before acting:
 - `filters`: actor handle/name, text substring, date substring, and optional limit
 - `mode`: `dry-run` or `execute`
 
-If the user says only "interact with notifications" without enough detail, default to `dry-run` and present candidates first instead of clicking anything.
+Default resolution rules:
+
+- If `profile_name` is unspecified, use `default` without asking
+- If the user explicitly asked to `like` or `bookmark`, default `mode=execute`
+- If the user explicitly asked to `repost`, default `mode=dry-run` unless the request already includes clear matching conditions
+- If `types` is unspecified, inspect both `reply` and `quote`
+- If `filters` is unspecified and the action is `like` or `bookmark`, treat the request as applying to all matching pending notifications currently collected
+
+If the user says only "interact with notifications" without enough detail to infer an action, default to `dry-run` and present candidates instead of clicking anything.
 
 Recommended decision rule:
 
@@ -136,7 +144,10 @@ Useful filter patterns:
 
 If multiple candidates still match and the user asked for one specific item, stop and show the narrowed list instead of acting.
 
-If no explicit filters were supplied, propose a candidate list grouped by reply and quote, then wait for confirmation unless the user clearly asked to act on all matching unacted notifications of a broad class.
+If no explicit filters were supplied:
+
+- for `like` or `bookmark`, execute against all matching pending notifications when the user clearly asked to perform that action
+- for `repost`, present the candidate list first unless the request already identifies the target notifications unambiguously
 
 ### 6. Execute the requested action
 
@@ -182,7 +193,8 @@ Report:
 
 - Never hardcode a profile name
 - Never act on anything if the matching logic is ambiguous
-- Prefer `dry-run` first unless the user clearly requested execution
+- Do not ask follow-up questions when the action, scope, and target notifications are already explicit enough to execute safely
+- Prefer `dry-run` first for `repost` or when the requested action cannot be matched unambiguously
 - Use fresh refs from the latest `/snapshot`; do not reuse stale refs after scrolling or clicking
 - Check both tabs before saying there are no matches
 - Treat `repost` as higher-risk than `like` or `bookmark`; stop if any confirmation step is unclear

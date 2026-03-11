@@ -17,9 +17,9 @@ Keep this skill read-only. Do not like, repost, reply, or otherwise engage with 
 
 ## Steps
 
-### 1. Ask the user for profile name
+### 1. Resolve the profile name
 
-Ask which profile name to use (default is `default`). This determines which browser profile to load.
+Use `default` unless the user explicitly requested another profile. This determines which browser profile to load.
 
 ### 2. Verify server is running
 
@@ -27,7 +27,7 @@ Ask which profile name to use (default is `default`). This determines which brow
 curl -s http://127.0.0.1:3333/health
 ```
 
-If not running, start it:
+If not running, start it with the resolved profile:
 
 ```bash
 HEADLESS=0 PROFILE_NAME=<profile_name> npx tsx src/index.ts &
@@ -109,6 +109,7 @@ kill $(lsof -ti:9222) 2>/dev/null
 
 ## Important notes
 
+- Do not ask which profile to use unless the user explicitly needs a non-`default` profile
 - Add `sleep 1-2` between operations to wait for page loads
 - Always use `/snapshot` before each action to get fresh refs
 - The notifications page may require scrolling to load all notifications (infinite scroll)

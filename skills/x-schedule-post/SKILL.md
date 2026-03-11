@@ -17,10 +17,15 @@ Treat this as the schedule-focused variant of `x-compose-post`. If the user want
 
 ## Required inputs
 
-Ask the user for:
 - **Post text**: The text to post
 - **Scheduled date/time**: Year, month, day, hour, and minute
 - **Image** (optional): An image to attach
+
+Default resolution rules:
+
+- Use `default` unless the user explicitly requested another profile
+- If post text and the full scheduled date/time are already provided, execute directly without an extra confirmation step
+- Ask follow-up questions only when required inputs are missing
 
 ## Steps
 
@@ -30,7 +35,7 @@ Ask the user for:
 curl -s http://127.0.0.1:3333/health
 ```
 
-If not running, start it:
+If not running, start it with the resolved profile:
 
 ```bash
 HEADLESS=0 PROFILE_NAME=<profile_name> npx tsx src/index.ts &
@@ -186,6 +191,7 @@ kill $(lsof -ti:9222) 2>/dev/null
 
 ## Important notes
 
+- Do not ask which profile to use unless the user explicitly needs a non-`default` profile
 - Add `sleep 1-2` between operations to wait for page loads
 - Always use `/snapshot` before each action to get fresh refs (refs change when the page navigates or dialogs open/close)
 - X's UI is dynamic; use both snapshots and screenshots to identify the correct elements

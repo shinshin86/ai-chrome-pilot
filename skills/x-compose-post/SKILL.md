@@ -9,7 +9,7 @@ Use ai-chrome-pilot to create X posts from one unified workflow, then branch int
 
 Prefer this skill for all post-creation tasks. Use `x-schedule-post` only when a schedule-only flow is explicitly needed.
 
-Keep the skill profile-agnostic. Ask for the profile name at runtime instead of hardcoding any profile.
+Keep the skill profile-agnostic. Use `default` unless the user explicitly requested another profile.
 
 ## Prerequisites
 
@@ -20,9 +20,9 @@ Keep the skill profile-agnostic. Ask for the profile name at runtime instead of 
 
 If X shows a login screen, stop and use `x-login` first.
 
-## Inputs To Confirm
+## Inputs To Resolve
 
-Confirm these before acting:
+Resolve these before acting:
 
 - `profile_name`: default to `default` if unspecified
 - `mode`: one of `post`, `reply`, `quote`, `schedule`
@@ -32,6 +32,13 @@ Confirm these before acting:
 - `schedule`: required for `schedule`
   - year, month, day, hour, minute
 - `image`: optional attachment path when the user provided one
+
+Default resolution rules:
+
+- If `profile_name` is unspecified, use `default` without asking
+- If the request is a normal post and includes `post_text`, execute directly
+- If the request is a scheduled post and includes `post_text` plus the full schedule, execute directly
+- If the request is `reply` or `quote`, ask only when the target post is not specific enough to identify safely
 
 If the target post is not specific enough for `reply` or `quote`, stop and ask for clarification or first use a read-only skill to identify the exact target.
 
@@ -179,6 +186,7 @@ curl -s -X POST http://127.0.0.1:3333/eval \
 
 - Never hardcode a profile name
 - Never guess the target post for `reply` or `quote`
+- Do not ask for an extra confirmation immediately before submission when the mode, text, and target are already explicit
 - Prefer direct target URLs when the user supplied them
 - Stop when multiple similar posts match and the target is ambiguous
 - Use fresh refs from the latest `/snapshot`
