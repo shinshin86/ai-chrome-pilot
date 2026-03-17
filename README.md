@@ -14,7 +14,6 @@ Supports ARIA snapshots and ref ID-based element interaction — no CSS selector
 - **Ref-based element interaction**: Use `/snapshot` to list all interactive elements with ref IDs, then use `/act` with a ref to operate on them
 - **Optional Playwright**: Automatically uses `playwright-core` for some operations if installed (fully functional with CDP only)
 - **Session persistence**: Saves cookies, localStorage, IndexedDB, etc. to a profile directory, preserving login state across restarts
-- **Chrome extension relay**: Operate existing logged-in browser tabs as-is
 - **Element occlusion detection**: Returns an error when a click target is obscured by an overlay or popup
 
 ## Disclaimer
@@ -51,9 +50,6 @@ HEADLESS=1 npm run dev
 
 # Ephemeral session (no session persistence)
 EPHEMERAL=1 npm run dev
-
-# Relay mode (via Chrome extension, Chrome is not auto-launched)
-RELAY_ENABLED=1 RELAY_AUTH_TOKEN=secret npm run dev
 ```
 
 After starting, verify with `curl -s http://127.0.0.1:3333/health` — you should get `{"ok":true}`.
@@ -168,8 +164,6 @@ curl -s http://127.0.0.1:3333/screenshot -o screenshot.png
 | `PROFILE_DIR`      | ~/.ai-chrome-pilot/profiles/ | Profile directory                        |
 | `USER_DATA_DIR`    | (unset)                      | Explicit Chrome user data dir (overrides profile-based path selection) |
 | `EPHEMERAL`        | 0                            | Ephemeral session (1=enabled, no persist)|
-| `RELAY_ENABLED`    | 0                            | Relay mode (1=via Chrome extension)      |
-| `RELAY_AUTH_TOKEN`  | (empty)                      | Relay WebSocket auth token               |
 
 ## Profiles & Session Management
 
@@ -183,14 +177,7 @@ PROFILE_NAME=work npm run dev
 EPHEMERAL=1 npm run dev
 ```
 
-## Relay Mode
-
-Use relay mode to operate existing browser tabs.
-
-1. Start the server with `RELAY_ENABLED=1 RELAY_AUTH_TOKEN=secret npm run dev`
-2. Load the `extension/` directory in Chrome at `chrome://extensions`
-3. Configure the extension popup (Server URL: `ws://127.0.0.1:3333/relay`, Auth Token)
-4. Select the target tab and click Attach
+If you need to attach to an already-open browser tab instead of using a managed profile, use a dedicated tool such as Playwright MCP or OpenClaw. This project intentionally focuses on a single managed local Chrome profile.
 
 ## Development
 

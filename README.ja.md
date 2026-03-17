@@ -14,7 +14,6 @@ ARIA スナップショットと ref ID ベースの要素操作に対応し、C
 - **ref ベースの要素操作**: `/snapshot` でページの操作可能な要素を ref ID 付きで一覧取得し、`/act` で ref を指定して操作
 - **Playwright オプション**: `playwright-core` がインストール済みなら一部操作を自動的に Playwright で実行（なくても CDP のみで全操作可能）
 - **セッション永続化**: Cookie / localStorage / IndexedDB 等をプロファイルに保存し、ログイン状態を維持
-- **Chrome 拡張リレー**: 既存のログイン済みブラウザタブをそのまま操作可能
 - **要素遮蔽検知**: クリック時にオーバーレイ等で要素が隠れている場合はエラーを返す
 
 ## 注意事項
@@ -51,9 +50,6 @@ HEADLESS=1 npm run dev
 
 # 一時セッション（セッションを保持しない）
 EPHEMERAL=1 npm run dev
-
-# リレーモード（Chrome 拡張経由、Chrome は自動起動しない）
-RELAY_ENABLED=1 RELAY_AUTH_TOKEN=secret npm run dev
 ```
 
 起動後 `curl -s http://127.0.0.1:3333/health` で `{"ok":true}` が返れば準備完了です。
@@ -168,8 +164,6 @@ curl -s http://127.0.0.1:3333/screenshot -o screenshot.png
 | `PROFILE_DIR`      | ~/.ai-chrome-pilot/profiles/ | プロファイルディレクトリ                      |
 | `USER_DATA_DIR`    | (unset)                      | Chrome の user data dir を明示指定（profile ベースのパス選択より優先） |
 | `EPHEMERAL`        | 0                            | 一時セッション (1=有効、セッション保持しない) |
-| `RELAY_ENABLED`    | 0                            | リレーモード (1=Chrome 拡張経由)              |
-| `RELAY_AUTH_TOKEN` | (empty)                      | リレー WebSocket 認証トークン                 |
 
 ## プロファイルとセッション管理
 
@@ -183,14 +177,7 @@ PROFILE_NAME=work npm run dev
 EPHEMERAL=1 npm run dev
 ```
 
-## リレーモード
-
-既存のブラウザタブを操作したい場合に使用します。
-
-1. `RELAY_ENABLED=1 RELAY_AUTH_TOKEN=secret npm run dev` でサーバー起動
-2. Chrome の `chrome://extensions` で `extension/` ディレクトリを読み込み
-3. 拡張ポップアップで接続設定（Server URL: `ws://127.0.0.1:3333/relay`、Auth Token）
-4. 操作対象タブを選択して Attach
+既に開いているブラウザタブへアタッチしたい場合は、Playwright MCP や OpenClaw などの専用ツールを利用してください。このプロジェクトは、管理対象のローカル Chrome プロファイルを一つ扱う構成に意図的に絞っています。
 
 ## 開発
 

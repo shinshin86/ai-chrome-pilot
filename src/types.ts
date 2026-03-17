@@ -15,10 +15,6 @@ export interface AppConfig {
   readonly profileDir: string;
   /** If true, use ephemeral temp directory (no session persistence). */
   readonly ephemeral: boolean;
-  /** If true, enable relay mode (Chrome extension relay). */
-  readonly relayEnabled: boolean;
-  /** Auth token for relay WebSocket connections. */
-  readonly relayAuthToken: string;
 }
 
 export interface ChromeProcessHandle {

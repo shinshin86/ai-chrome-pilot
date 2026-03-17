@@ -45,7 +45,6 @@ Directly controls Chrome installed on the machine via CDP (Chrome DevTools Proto
 - Tab management (`/tabs`) / dialog handling (`/dialog`) / wait (`/wait`)
 - Cookie management (`/cookies`)
 - Profile persistence (cookies / localStorage / IndexedDB, etc.)
-- Chrome extension relay mode (attach to existing tabs)
 - Element occlusion detection (returns error when overlay covers the target)
 
 ### Advantages
@@ -55,12 +54,12 @@ Directly controls Chrome installed on the machine via CDP (Chrome DevTools Proto
 - **Session persistence**: Browser state is saved to a profile, maintaining login state across restarts
 - **Protocol-agnostic**: Any HTTP client works — no MCP or special tools required
 - **Easy to customize**: Built on Express, making it straightforward to add custom endpoints or adapt to specific needs
-- **Chrome extension relay**: Operate existing logged-in browser tabs as-is
 
 ### Limitations
 
 - **Single session**: Manages one browser session at a time (but supports multiple tabs)
 - **Manual initial login required**: Designed for users to log in manually, not fully automated authentication
+- **No attach-to-existing-tab mode**: Operates a managed local Chrome profile; if you need to attach to an already-open browser tab, use a dedicated tool such as Playwright MCP or OpenClaw
 - **No PDF generation**: Cannot export pages to PDF
 - **No network/console monitoring**: Does not capture network requests or console logs
 
@@ -303,7 +302,6 @@ ai-chrome-pilot:
   - ARIA snapshot + ref ID-based interaction
   - Optional Playwright (auto-detect + hybrid)
   - Profile persistence (cookies / localStorage / IndexedDB)
-  - Chrome extension relay mode
   - Element occlusion detection
 
 OpenClaw:
@@ -337,7 +335,7 @@ Legend for comparison tables: **o** = supported, **x** = not supported, **◎** 
 | PDF generation                  | x                    | o                   | o                      | o                                   |
 | Network monitoring              | x                    | x                   | o                      | o (console)                         |
 | Dialog handling                 | o (/dialog)          | x                   | o                      | o (dialog)                          |
-| Existing browser tab connection | o (Chrome ext relay) | x                   | o (extension mode)     | o (Chrome ext relay)                |
+| Existing browser tab connection | x                    | x                   | o (extension mode)     | o (Chrome ext relay)                |
 | Drag / hover / select           | o (/act)             | x                   | x                      | o                                   |
 | File upload                     | x                    | x                   | x                      | o                                   |
 | Sandbox support                 | x                    | x                   | x                      | o                                   |
