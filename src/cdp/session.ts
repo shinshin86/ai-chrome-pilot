@@ -33,7 +33,7 @@ export class CdpBrowserSession implements BrowserSession {
   }
 
   /**
-   * Create a session from an existing CdpClient (e.g. from relay mode).
+   * Create a session from an existing CdpClient.
    * The session does NOT own the client and will not close it.
    */
   static async fromClient(client: CdpClient): Promise<CdpBrowserSession> {

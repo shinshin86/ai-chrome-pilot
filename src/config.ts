@@ -50,8 +50,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     profileName: env.PROFILE_NAME || DEFAULT_PROFILE_NAME,
     profileDir: env.PROFILE_DIR || DEFAULT_PROFILE_DIR,
     ephemeral: parse01(env.EPHEMERAL, false, 'EPHEMERAL'),
-    relayEnabled: parse01(env.RELAY_ENABLED, false, 'RELAY_ENABLED'),
-    relayAuthToken: env.RELAY_AUTH_TOKEN ?? '',
     ...(env.USER_DATA_DIR ? { userDataDir: env.USER_DATA_DIR } : {}),
     ...(env.CHROME_PATH ? { chromePath: env.CHROME_PATH } : {})
   };

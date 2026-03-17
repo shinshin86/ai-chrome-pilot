@@ -28,11 +28,7 @@ export class App {
     }
 
     try {
-      if (this.config.relayEnabled) {
-        await this.startRelayMode();
-      } else {
-        await this.startChromeMode();
-      }
+      await this.startChromeMode();
     } catch (error) {
       await this.stop();
       throw error;
@@ -108,37 +104,6 @@ export class App {
     } else {
       console.log(`[startup] Profile: ephemeral (session will not persist)`);
     }
-  }
-
-  private async startRelayMode(): Promise<void> {
-    const { RelayServer } = await import('./relay/server.js');
-    const relay = new RelayServer(this.config.relayAuthToken);
-
-    const relayClient = relay.asCdpClient();
-    this.session = await CdpBrowserSession.fromClient(relayClient);
-
-    const sharedProxy = createSharedProxy(relayClient);
-
-    const expressApp = createControlServer({
-      session: this.session,
-      evaluateEnabled: this.config.evaluateEnabled,
-      snapshotEngine: this.snapshotEngine,
-      getCdpClient: () => Promise.resolve(sharedProxy),
-      cdpHttpEndpoint: '' // Not used in relay mode
-    });
-
-    await this.listenServer(expressApp);
-
-    // Attach relay WebSocket handler to the HTTP server
-    relay.attach(this.server!);
-
-    console.log(
-      `[startup] Control server: http://${this.config.controlHost}:${this.config.controlPort}`
-    );
-    console.log(`[startup] Mode: Relay (Chrome extension)`);
-    console.log(
-      `[startup] Relay WebSocket: ws://${this.config.controlHost}:${this.config.controlPort}/relay`
-    );
   }
 
   private async listenServer(expressApp: ReturnType<typeof createControlServer>): Promise<void> {
