@@ -182,4 +182,96 @@ describe('control server routes', () => {
     expect(res.status).toBe(400);
     expect((res.body as { error: string }).error).toContain('action must be one of');
   });
+
+  test('POST /file-input returns 400 when files is missing', async () => {
+    const local = await requestLocal(app);
+
+    const res = await local.agent.post('/file-input').send({});
+    await local.close();
+
+    expect(res.status).toBe(400);
+    expect((res.body as { error: string }).error).toContain('"files" must be a non-empty array');
+  });
+
+  test('POST /file-input returns 400 when files is empty array', async () => {
+    const local = await requestLocal(app);
+
+    const res = await local.agent.post('/file-input').send({ files: [] });
+    await local.close();
+
+    expect(res.status).toBe(400);
+    expect((res.body as { error: string }).error).toContain('"files" must be a non-empty array');
+  });
+
+  test('POST /file-input returns 400 when files contains non-string', async () => {
+    const local = await requestLocal(app);
+
+    const res = await local.agent.post('/file-input').send({ files: [123] });
+    await local.close();
+
+    expect(res.status).toBe(400);
+    expect((res.body as { error: string }).error).toContain('must be a string path');
+  });
+
+  test('POST /file-input calls CDP DOM commands', async () => {
+    const opts = createServerOptions();
+    const mockCdp = opts.mockCdp;
+    const sendMock = mockCdp.send as ReturnType<typeof vi.fn>;
+
+    // Mock DOM.getDocument to return a root node
+    sendMock.mockImplementation((method: string) => {
+      if (method === 'DOM.getDocument') {
+        return Promise.resolve({ root: { nodeId: 1 } });
+      }
+      if (method === 'DOM.querySelector') {
+        return Promise.resolve({ nodeId: 42 });
+      }
+      if (method === 'DOM.setFileInputFiles') {
+        return Promise.resolve({});
+      }
+      return Promise.resolve({});
+    });
+
+    const local = await requestLocal(opts.app);
+    const res = await local.agent
+      .post('/file-input')
+      .send({ files: ['/tmp/test.png'] });
+    await local.close();
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true });
+    expect(sendMock).toHaveBeenCalledWith('DOM.getDocument', { depth: 0 });
+    expect(sendMock).toHaveBeenCalledWith('DOM.querySelector', {
+      nodeId: 1,
+      selector: 'input[type=file]'
+    });
+    expect(sendMock).toHaveBeenCalledWith('DOM.setFileInputFiles', {
+      files: ['/tmp/test.png'],
+      nodeId: 42
+    });
+  });
+
+  test('POST /file-input returns 400 when element not found', async () => {
+    const opts = createServerOptions();
+    const sendMock = opts.mockCdp.send as ReturnType<typeof vi.fn>;
+
+    sendMock.mockImplementation((method: string) => {
+      if (method === 'DOM.getDocument') {
+        return Promise.resolve({ root: { nodeId: 1 } });
+      }
+      if (method === 'DOM.querySelector') {
+        return Promise.resolve({ nodeId: 0 });
+      }
+      return Promise.resolve({});
+    });
+
+    const local = await requestLocal(opts.app);
+    const res = await local.agent
+      .post('/file-input')
+      .send({ files: ['/tmp/test.png'], selector: '#nonexistent' });
+    await local.close();
+
+    expect(res.status).toBe(400);
+    expect((res.body as { error: string }).error).toContain('No element found');
+  });
 });

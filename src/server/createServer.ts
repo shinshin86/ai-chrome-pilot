@@ -367,6 +367,47 @@ export function createControlServer(options: CreateControlServerOptions): Expres
     })
   );
 
+  // ─── File input ───
+
+  app.post(
+    '/file-input',
+    asyncHandler(async (req, res) => {
+      const body = bodyOf(req);
+      const selector =
+        typeof body.selector === 'string' ? body.selector : 'input[type=file]';
+      const files = body.files;
+      if (!Array.isArray(files) || files.length === 0) {
+        throw badRequest('"files" must be a non-empty array of file paths');
+      }
+      for (const f of files) {
+        if (typeof f !== 'string') {
+          throw badRequest('Each entry in "files" must be a string path');
+        }
+      }
+
+      const cdp = await options.getCdpClient();
+      try {
+        const doc = await cdp.send('DOM.getDocument', { depth: 0 });
+        const root = doc as { root: { nodeId: number } };
+        const nodeResult = await cdp.send('DOM.querySelector', {
+          nodeId: root.root.nodeId,
+          selector
+        });
+        const node = nodeResult as { nodeId: number };
+        if (!node.nodeId) {
+          throw badRequest(`No element found for selector: ${selector}`);
+        }
+        await cdp.send('DOM.setFileInputFiles', {
+          files: files as string[],
+          nodeId: node.nodeId
+        });
+        res.json({ ok: true });
+      } finally {
+        cdp.close();
+      }
+    })
+  );
+
   app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
     const status = statusFromError(error);
     res.status(status).json({ error: asMessage(error) });
