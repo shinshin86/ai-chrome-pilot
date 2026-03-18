@@ -1,0 +1,4 @@
+interface:
+  display_name: "X Get Scheduled Posts"
+  short_description: "Inspect and export queued X scheduled posts."
+  default_prompt: "Use $x-get-scheduled-posts to open X scheduled posts, show me what is currently queued, and optionally export the list to files."

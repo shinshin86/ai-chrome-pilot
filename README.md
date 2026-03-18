@@ -262,6 +262,7 @@ This project includes [Agent Skills](https://agentskills.io/) in the `skills/` d
 | ----- | ----------- |
 | `x-login` | Log in to X via browser (delegates manual login to the user, persists session) |
 | `x-schedule-post` | Schedule a post on X and verify it in the scheduled posts list |
+| `x-get-scheduled-posts` | Inspect X scheduled posts in read-only mode and optionally export the current queue |
 | `x-get-notifications` | Retrieve X notifications and filter for replies / quote reposts |
 
 ### Using with Claude Code

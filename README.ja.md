@@ -262,6 +262,7 @@ CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npm r
 | ----- | ----------- |
 | `x-login` | ブラウザで X にログイン（ログイン操作はユーザーが手動実施、セッションを永続化） |
 | `x-schedule-post` | X の予約投稿を作成し、予約済み一覧で確認 |
+| `x-get-scheduled-posts` | X の予約済み投稿を read-only で確認し、必要なら現在の一覧を書き出す |
 | `x-get-notifications` | X の通知を取得し、返信/引用リポストを抽出 |
 
 ### Claude Code で使う
