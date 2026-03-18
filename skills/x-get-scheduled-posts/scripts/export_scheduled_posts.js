@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs';
+import process from 'node:process';
 
 function parseArgs(argv) {
   const args = {};
@@ -100,7 +101,7 @@ function main() {
   );
   fs.writeFileSync(listMdFile, `${buildMarkdown(stamp, items)}\n`);
 
-  console.log(
+  globalThis.console.log(
     JSON.stringify(
       {
         ok: true,

@@ -44,18 +44,26 @@ function createSessionMock(): { session: BrowserSession; mocks: SessionMocks } {
   };
 }
 
-function createMockCdpClient(): CdpClient {
+function createMockCdpClient(): {
+  client: CdpClient;
+  send: ReturnType<typeof vi.fn>;
+} {
+  const send = vi.fn(() => Promise.resolve({}));
+
   return {
-    send: vi.fn(() => Promise.resolve({})),
-    close: vi.fn(() => Promise.resolve()),
-    isConnected: true
-  } as unknown as CdpClient;
+    client: {
+      send,
+      close: vi.fn(() => Promise.resolve()),
+      isConnected: true
+    } as unknown as CdpClient,
+    send
+  };
 }
 
 function createServerOptions(overrides?: { evaluateEnabled?: boolean }) {
   const { session, mocks } = createSessionMock();
   const snapshotEngine = new SnapshotEngine();
-  const mockCdp = createMockCdpClient();
+  const { client: mockCdp, send: mockCdpSend } = createMockCdpClient();
 
   const app = createControlServer({
     session,
@@ -65,7 +73,7 @@ function createServerOptions(overrides?: { evaluateEnabled?: boolean }) {
     cdpHttpEndpoint: 'http://127.0.0.1:19999'
   });
 
-  return { app, session, mocks, snapshotEngine, mockCdp };
+  return { app, session, mocks, snapshotEngine, mockCdp, mockCdpSend };
 }
 
 async function requestLocal(
@@ -215,8 +223,7 @@ describe('control server routes', () => {
 
   test('POST /file-input calls CDP DOM commands', async () => {
     const opts = createServerOptions();
-    const mockCdp = opts.mockCdp;
-    const sendMock = mockCdp.send as ReturnType<typeof vi.fn>;
+    const sendMock = opts.mockCdpSend;
 
     // Mock DOM.getDocument to return a root node
     sendMock.mockImplementation((method: string) => {
@@ -253,7 +260,7 @@ describe('control server routes', () => {
 
   test('POST /file-input returns 400 when element not found', async () => {
     const opts = createServerOptions();
-    const sendMock = opts.mockCdp.send as ReturnType<typeof vi.fn>;
+    const sendMock = opts.mockCdpSend;
 
     sendMock.mockImplementation((method: string) => {
       if (method === 'DOM.getDocument') {
