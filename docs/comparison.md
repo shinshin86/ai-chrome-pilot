@@ -1,4 +1,4 @@
-# Browser Automation Tool Comparison: This Project vs Playwright CLI vs Playwright MCP vs OpenClaw
+# Browser Automation Tool Comparison: This Project vs Playwright CLI vs Playwright MCP vs Browser Use vs OpenClaw
 
 [日本語版はこちら](comparison.ja.md)
 
@@ -9,17 +9,19 @@
 | Lightweight setup with minimal dependencies / embed in other systems | **ai-chrome-pilot** |
 | Quick browser ops from Claude Code / Codex | **Playwright CLI**           |
 | Long-running autonomous exploration         | **Playwright MCP**           |
+| Higher-level Python browser agent runtime with built-in LLM loop | **Browser Use** |
 | Full agent infra + sandbox + secure ops     | **OpenClaw**                 |
 
 ## Overview
 
-A comparison of four major approaches for controlling a browser from AI agents (e.g., Claude Code).
+A comparison of five major approaches for controlling a browser from AI agents (e.g., Claude Code).
 
 | Tool                                              | Developer       | Approach                              | Connection Method        |
 | ------------------------------------------------- | --------------- | ------------------------------------- | ------------------------ |
 | **This Project** (ai-chrome-pilot)                | Open Source     | CDP + Playwright (optional) + REST API| HTTP API (any client)    |
 | **Playwright CLI**                                | Microsoft (OSS) | CLI commands                          | Direct Bash execution    |
 | **Playwright MCP**                                | Microsoft (OSS) | Model Context Protocol                | MCP client               |
+| **Browser Use**                                   | browser-use (OSS / Cloud) | Python agent runtime + CDP + browser session/watchdogs | Python API / CLI / remote CDP |
 | **OpenClaw Browser Integration**                  | OpenClaw        | CDP + Playwright + Gateway HTTP API   | Agent tools / CLI        |
 
 ---
@@ -166,7 +168,50 @@ Notable tools:
 
 ---
 
-## 4. OpenClaw Browser Integration
+## 4. Browser Use
+
+### Architecture
+
+```text
+User → Python app / agent → Browser Use Agent loop → BrowserSession + Tools + Watchdogs → CDP → Chrome / remote browser
+```
+
+Browser Use sits at a higher abstraction level than the other tools in this document. Instead of only exposing browser control primitives, it includes an agent runtime that repeatedly captures browser state (DOM/accessibility-derived structure, tabs, screenshots, recent events), asks an LLM what to do next, and executes structured browser actions over CDP.
+
+### Key Characteristics
+
+- `Agent(...)` abstraction with a built-in step loop
+- `BrowserSession` for local launch, existing CDP connection, or cloud browser connection
+- DOM + accessibility + screenshot context for model decisions
+- Action registry for click / type / scroll / navigate / upload / evaluate / tabs
+- Event-driven watchdog architecture for downloads, popups, screenshots, security, crashes, and more
+- Custom tool registration for extending the agent beyond browser-only actions
+
+### Advantages
+
+- **Built-in agent loop**: Unlike thin control servers, Browser Use includes the reasoning/execution loop itself. That is useful when you want the browser layer and the LLM orchestration layer to be part of the same runtime
+- **Richer model context**: Can feed screenshots, DOM-derived state, tab state, and recent events into the model, not just a snapshot endpoint response
+- **Flexible connection model**: Can launch a local browser, connect to an existing browser via `cdp_url`, or use Browser Use Cloud
+- **Custom tools and deep integration**: Strong fit for Python-based agent systems that want to combine browser actions with arbitrary app logic
+- **Guardrails and lifecycle handling**: Domain restrictions, popup handling, downloads, crash recovery, and other watchdog behaviors are part of the session design
+
+### Limitations
+
+- **Heavier and more opinionated**: This is a larger Python agent framework, not a minimal browser bridge. If you only want explicit `snapshot` / `click` / `type` primitives over HTTP, ai-chrome-pilot is simpler
+- **More moving parts**: Browser session management, prompts, action models, and watchdogs add power, but also complexity
+- **Less transport-agnostic**: Best fit when you are comfortable embedding a Python library or using its CLI, rather than driving everything from plain `curl`
+- **Token usage can grow**: Because Browser Use can include screenshots and richer browser context in the agent loop, it is generally not the leanest option for token-minimal automation
+
+### Ideal Use Cases
+
+- End-to-end browser agents that must reason over multi-step tasks
+- Python-based agent applications that want custom tools and browser automation in one runtime
+- Workflows that benefit from screenshots, richer page state, and agent-side guardrails
+- Local or remote/cloud browser automation under one abstraction
+
+---
+
+## 5. OpenClaw Browser Integration
 
 ### Architecture
 
@@ -323,41 +368,42 @@ Legend for comparison tables: **o** = supported, **x** = not supported, **◎** 
 
 ### Feature Comparison
 
-| Feature                         | This Project         | Playwright CLI      | Playwright MCP         | OpenClaw                            |
-| ------------------------------- | :------------------: | :-----------------: | :--------------------: | :---------------------------------: |
-| Page navigation                 | o                    | o                   | o                      | o                                   |
-| Click / text input              | o                    | o                   | o                      | o                                   |
-| Screenshot                      | o                    | o                   | o                      | o                                   |
-| Automatic page structure analysis | o (snapshot + ref ID) | o (snapshot)      | o (page_snapshot)      | o (snapshot + ref ID)               |
-| Auth state save/restore         | o (profile persistence) | o (state-save/load) | o (persistent profile) | o (isolated profile + manual login) |
-| Multiple session management     | o (multi-profile)    | o                   | o                      | o (multi-profile)                   |
-| JavaScript execution            | o (/eval)            | o                   | o                      | o (evaluate)                        |
-| PDF generation                  | x                    | o                   | o                      | o                                   |
-| Network monitoring              | x                    | x                   | o                      | o (console)                         |
-| Dialog handling                 | o (/dialog)          | x                   | o                      | o (dialog)                          |
-| Existing browser tab connection | x                    | x                   | o (extension mode)     | o (Chrome ext relay)                |
-| Drag / hover / select           | o (/act)             | x                   | x                      | o                                   |
-| File upload                     | x                    | x                   | x                      | o                                   |
-| Sandbox support                 | x                    | x                   | x                      | o                                   |
-| Works without Playwright        | o (all operations)   | x                   | x                      | o (basic operations only)           |
+| Feature                         | This Project         | Playwright CLI      | Playwright MCP         | Browser Use                                  | OpenClaw                            |
+| ------------------------------- | :------------------: | :-----------------: | :--------------------: | :------------------------------------------: | :---------------------------------: |
+| Page navigation                 | o                    | o                   | o                      | o                                            | o                                   |
+| Click / text input              | o                    | o                   | o                      | o                                            | o                                   |
+| Screenshot                      | o                    | o                   | o                      | o                                            | o                                   |
+| Automatic page structure analysis | o (snapshot + ref ID) | o (snapshot)      | o (page_snapshot)      | o (DOM + AX + screenshot context)            | o (snapshot + ref ID)               |
+| Auth state save/restore         | o (profile persistence) | o (state-save/load) | o (persistent profile) | o (profile / session persistence)            | o (isolated profile + manual login) |
+| Multiple session management     | o (multi-profile)    | o                   | o                      | o                                            | o (multi-profile)                   |
+| JavaScript execution            | o (/eval)            | o                   | o                      | o (`eval`)                                   | o (evaluate)                        |
+| PDF generation                  | x                    | o                   | o                      | x                                            | o                                   |
+| Network monitoring              | x                    | x                   | o                      | x                                            | o (console)                         |
+| Dialog handling                 | o (/dialog)          | x                   | o                      | o (popup/dialog watchdog)                    | o (dialog)                          |
+| Existing browser tab connection | x                    | x                   | o (extension mode)     | o (connect to existing browser via `cdp_url`) | o (Chrome ext relay)                |
+| Drag / hover / select           | o (/act)             | x                   | x                      | △ (hover/select built-in; drag via custom logic) | o                                |
+| File upload                     | x                    | x                   | x                      | o                                            | o                                   |
+| Sandbox support                 | x                    | x                   | x                      | x                                            | o                                   |
+| Works without Playwright        | o (all operations)   | x                   | x                      | o                                            | o (basic operations only)           |
 
 ### Non-functional Comparison
 
-| Aspect               | This Project          | Playwright CLI | Playwright MCP | OpenClaw                |
-| -------------------- | :-------------------: | :------------: | :------------: | :---------------------: |
-| Setup ease           | ◎ ^1                  | ○              | △              | △ (requires Gateway)    |
-| Token efficiency     | ○ (ref-based)         | ◎ ^2           | △              | ○ (ref-based)           |
-| Code comprehensibility | ○ ^3                | △ (large)      | △ (large)      | △ (large)               |
-| Customizability      | ◎ ^4                  | ○              | ○              | ○                       |
-| Long sessions        | ◎ (profile persist)   | ○              | ◎              | ◎ (profile persist)     |
-| Error resilience     | ○ (occlusion detect)  | ○              | ◎              | ◎                       |
-| Auth security        | ○ (profile isolation) | ○              | ○              | ◎ (isolation + manual)  |
-| Daily task automation | ○                    | ○              | ○              | ◎                       |
+| Aspect               | This Project          | Playwright CLI | Playwright MCP | Browser Use             | OpenClaw                |
+| -------------------- | :-------------------: | :------------: | :------------: | :---------------------: | :---------------------: |
+| Setup ease           | ◎ ^1                  | ○              | △              | ○ ^5                    | △ (requires Gateway)    |
+| Token efficiency     | ○ (ref-based)         | ◎ ^2           | △              | △                       | ○ (ref-based)           |
+| Code comprehensibility | ○ ^3                | △ (large)      | △ (large)      | △ (large)               | △ (large)               |
+| Customizability      | ◎ ^4                  | ○              | ○              | ◎                       | ○                       |
+| Long sessions        | ◎ (profile persist)   | ○              | ◎              | ◎                       | ◎ (profile persist)     |
+| Error resilience     | ○ (occlusion detect)  | ○              | ◎              | ◎                       | ◎                       |
+| Auth security        | ○ (profile isolation) | ○              | ○              | ○                       | ◎ (isolation + manual)  |
+| Daily task automation | ○                    | ○              | ○              | ◎                       | ◎                       |
 
 > ^1 `npm install && npm run dev` only; no external server or MCP config required
 > ^2 Playwright team benchmark: ~27k tokens vs MCP's ~114k tokens per task
 > ^3 ~2k LOC (TypeScript); Playwright CLI / MCP / OpenClaw are each 10k+ LOC
 > ^4 Plain Express server; add routes or middleware with no framework constraints
+> ^5 Requires Python + `uv` setup, but includes a built-in agent runtime, CLI, and remote/cloud browser support
 
 ### Selection Guide
 
@@ -371,6 +417,9 @@ Want quick browser control from Claude Code / script routine tasks
 Long-running complex autonomous operations / exploratory tasks
   → Playwright MCP
 
+Want a Python-first browser agent framework with built-in LLM orchestration, custom tools, and remote/browser session abstraction
+  → Browser Use
+
 Agent infrastructure integration / sandbox support / secure production use
   → OpenClaw Browser Integration
 ```
@@ -380,6 +429,8 @@ Agent infrastructure integration / sandbox support / secure production use
 ## Reference Links
 
 - [OpenClaw Browser Tools Documentation](https://github.com/openclaw/openclaw) — OpenClaw browser integration
+- [Browser Use (GitHub)](https://github.com/browser-use/browser-use)
+- [Browser Use Docs](https://docs.browser-use.com)
 - [Microsoft Playwright MCP (GitHub)](https://github.com/microsoft/playwright-mcp)
 - [Playwright CLI vs. MCP: Browser Automation for Coding Agents | Better Stack](https://betterstack.com/community/guides/ai/playwright-cli-vs-mcp-browser/)
 - [Playwright CLI: The Token-Efficient Alternative | TestCollab](https://testcollab.com/blog/playwright-cli)
