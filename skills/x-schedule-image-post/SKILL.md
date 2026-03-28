@@ -12,6 +12,7 @@ Schedule a post on X with an attached image and the "AI-generated" content discl
 
 - ai-chrome-pilot server is running
 - User is logged in to X (if not, run the `x-login` skill first)
+- Prefer `HEADLESS=0` for real scheduling flows so the visible composer state can be inspected
 
 ## Required inputs
 
@@ -56,7 +57,7 @@ curl -s -X POST http://127.0.0.1:3333/goto \
 
 After `sleep 2`, take a screenshot to confirm the user is logged in.
 
-### 3. Enter post text
+### 3. Enter post text safely
 
 Use `/snapshot` to find the post text box ref.
 
@@ -64,19 +65,21 @@ Use `/snapshot` to find the post text box ref.
 curl -s http://127.0.0.1:3333/snapshot
 ```
 
-Look for `textbox "ポスト本文"` (Post text), click it, then type the text.
+Look for `textbox "ポスト本文"` (Post text), click it, then treat `/act type` only as an initial convenience path.
 
 ```bash
 curl -s -X POST http://127.0.0.1:3333/act \
   -H 'Content-Type: application/json' \
   -d '{"ref":"<textbox_ref>","action":"click"}'
-
-sleep 1
-
-curl -s -X POST http://127.0.0.1:3333/act \
-  -H 'Content-Type: application/json' \
-  -d '{"ref":"<textbox_ref>","action":"type","value":"<post_text>"}'
 ```
+
+For scheduling that will actually be submitted, prefer the same text-entry strategy as `x-compose-post`:
+
+- connect to the existing Chrome instance with `Playwright over CDP`
+- enter text with `page.keyboard.type()`
+- verify `[data-testid="tweetTextarea_0"]` exactly matches the intended text before attaching media or opening the schedule dialog
+
+Do not rely on the visible composer alone. X can show an enabled action state while the actual composer DOM is still out of sync.
 
 ### 4. Attach the image
 
@@ -258,3 +261,5 @@ This avoids repeated navigation and verification overhead.
 - After setting the date/time, **always** click the "確認する" (Confirm) or "更新" (Update) button to apply the changes
 - The `/file-input` endpoint accepts an array of file paths; for single image posts, pass one path
 - The AI label toggle is in the "コンテンツ開示" (Content disclosure) panel; the switch is labeled "AIで生成"
+- Before final submission, verify the composer DOM text still matches the intended scheduled text
+- If `/act type` appears to work visually but `[data-testid="tweetTextarea_0"]` does not match, stop and switch to the CDP keyboard path instead of scheduling

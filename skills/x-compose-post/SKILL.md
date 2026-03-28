@@ -16,6 +16,7 @@ Keep the skill profile-agnostic. Use `default` unless the user explicitly reques
 - ai-chrome-pilot server is available in the current repo
 - Google Chrome is installed
 - The user is already logged in to X in the chosen Chrome profile
+- Prefer `HEADLESS=0` for real submission flows so the visible composer state can be inspected
 - The UI is expected to be Japanese; match labels such as `ポストする`, `返信`, `引用する`, `ポストを予約`, `確認する`, and `予約設定`
 
 If X shows a login screen, stop and use `x-login` first.
@@ -94,23 +95,59 @@ curl -s http://127.0.0.1:3333/snapshot
 
 Refs change after navigation, dialog open/close, scrolling, and submission. Never reuse stale refs.
 
-### 4. Enter the post text
+### 4. Enter the post text safely
 
-Find the active `textbox "ポスト本文"` and enter the text.
+Find the active `textbox "ポスト本文"` and focus it, but do not assume that `/act type` alone is enough for X.
 
-First try the normal ref-based action:
+Observed failure mode:
+
+- `/act type` can make the submit button look enabled while the actual X composer state is still out of sync
+- the visible page may appear filled, but `[data-testid="tweetTextarea_0"]` can still be empty or mismatched
+
+Use this approach for real submission flows:
+
+1. Use `/snapshot` and `/act click` to focus the correct composer
+2. Prefer `Playwright over CDP` to connect to the already-open Chrome instance on `http://127.0.0.1:9222`
+3. Enter text with `page.keyboard.type()` instead of relying on `/act type`
+4. Verify the DOM text exactly matches the intended post before clicking any submit button
+
+Minimal pattern:
 
 ```bash
 curl -s -X POST http://127.0.0.1:3333/act \
   -H 'Content-Type: application/json' \
   -d '{"ref":"<textbox_ref>","action":"click"}'
-sleep 1
-curl -s -X POST http://127.0.0.1:3333/act \
-  -H 'Content-Type: application/json' \
-  -d '{"ref":"<textbox_ref>","action":"type","value":"<post_text>"}'
 ```
 
-If the visible composer is `contenteditable` and `/act type` does not populate it, use `/eval` to set the active `tweetTextarea_0` element directly, then verify the text appears before submitting.
+```bash
+node -e "const { chromium } = require('playwright-core'); (async () => {
+  const expected = '<post_text>';
+  const browser = await chromium.connectOverCDP('http://127.0.0.1:9222');
+  const pages = browser.contexts().flatMap(c => c.pages());
+  const page = pages.find(p => p.url().startsWith('https://x.com/')) || pages[0];
+  const composer = page.locator('[data-testid=\"tweetTextarea_0\"]');
+  await composer.click();
+  // Use the current platform's Select All shortcut before replacing text.
+  await page.keyboard.press('Meta+A');
+  await page.keyboard.press('Backspace');
+  await page.keyboard.type(expected, { delay: 60 });
+  const ok = await page.evaluate(text => {
+    const composerNode = document.querySelector('[data-testid=\"tweetTextarea_0\"]');
+    return (composerNode?.innerText || '') === text;
+  }, expected);
+  console.log(JSON.stringify({ ok }));
+  await browser.close();
+})().catch(err => { console.error(err); process.exit(1); });"
+```
+
+If the environment is not macOS, replace `Meta+A` with the platform's Select All equivalent such as `Control+A`.
+
+Before submit, verify at least these conditions:
+
+- `[data-testid="tweetTextarea_0"]` `innerText` exactly equals the intended text
+- the relevant submit button is enabled
+
+Use `/act type` only as a light first try or for non-critical preparation. If `/act type` and the DOM text disagree, stop and switch to the CDP keyboard path instead of submitting.
 
 ### 5. Attach an image when requested
 
@@ -122,7 +159,7 @@ Only do this when the user explicitly provided an image path and the current tas
 
 1. Open X home if not already there
 2. Focus the main composer
-3. Enter `post_text`
+3. Enter `post_text` using the safe text-entry path above
 4. Optionally attach an image
 5. Click `button "ポストする"`
 
@@ -131,7 +168,7 @@ Only do this when the user explicitly provided an image path and the current tas
 1. Open the target post
 2. Find either the inline reply textbox or the `button "<N> 件の返信。返信する"` trigger
 3. Open the reply composer if needed
-4. Enter `post_text`
+4. Enter `post_text` using the safe text-entry path above
 5. Optionally attach an image
 6. Click `button "返信"`
 
@@ -140,14 +177,14 @@ Only do this when the user explicitly provided an image path and the current tas
 1. Open the target post
 2. Click the repost button such as `button "<N> 件のリポスト件。リポスト"`
 3. In the menu, click `menuitem "引用する"`
-4. Enter `post_text`
+4. Enter `post_text` using the safe text-entry path above
 5. Optionally attach an image
 6. Click `button "ポストする"`
 
 ### `schedule`
 
 1. Open X home
-2. Enter `post_text`
+2. Enter `post_text` using the safe text-entry path above
 3. Optionally attach an image
 4. Click `button "ポストを予約"`
 5. In the schedule dialog, set month, day, year, hour, and minute using `select`
@@ -182,6 +219,12 @@ curl -s -X POST http://127.0.0.1:3333/eval \
   -d '{"js":"document.body.innerText.includes(<expected_text_json>)"}'
 ```
 
+```bash
+curl -s -X POST http://127.0.0.1:3333/eval \
+  -H 'Content-Type: application/json' \
+  -d '{"js":"({text:document.querySelector(\"[data-testid=\\\"tweetTextarea_0\\\"]\")?.innerText || \"\", disabled:document.querySelector(\"[data-testid=\\\"tweetButtonInline\\\"]\")?.disabled ?? null})"}'
+```
+
 ## Safety Rules
 
 - Never hardcode a profile name
@@ -190,7 +233,9 @@ curl -s -X POST http://127.0.0.1:3333/eval \
 - Prefer direct target URLs when the user supplied them
 - Stop when multiple similar posts match and the target is ambiguous
 - Use fresh refs from the latest `/snapshot`
-- Re-check the typed text before clicking any submit button
+- Re-check the typed text in the actual composer DOM before clicking any submit button
+- If `/act type` appears to work visually but the DOM text does not match, do not submit
+- Prefer `Playwright over CDP` with `page.keyboard.type()` for X composer text entry when a real submission will happen
 - If `Browser connection is closed` or `CDP client is not connected` appears, restart the server and re-verify before resuming
 - Never attempt automatic login or credential entry
 

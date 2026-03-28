@@ -14,6 +14,7 @@ Treat this as the schedule-focused variant of `x-compose-post`. If the user want
 
 - ai-chrome-pilot server is running
 - User is logged in to X (if not, run the `x-login` skill first)
+- Prefer `HEADLESS=0` for real scheduling flows so the visible composer state can be inspected
 
 ## Required inputs
 
@@ -52,7 +53,7 @@ curl -s -X POST http://127.0.0.1:3333/goto \
 
 After `sleep 2`, take a screenshot to confirm the user is logged in.
 
-### 3. Enter post text
+### 3. Enter post text safely
 
 Use `/snapshot` to find the post text box ref.
 
@@ -60,19 +61,21 @@ Use `/snapshot` to find the post text box ref.
 curl -s http://127.0.0.1:3333/snapshot
 ```
 
-Look for `textbox "ポスト本文"` (Post text), click it, then type the text.
+Look for `textbox "ポスト本文"` (Post text), click it, then treat `/act type` only as an initial convenience path.
 
 ```bash
 curl -s -X POST http://127.0.0.1:3333/act \
   -H 'Content-Type: application/json' \
   -d '{"ref":"<textbox_ref>","action":"click"}'
-
-sleep 1
-
-curl -s -X POST http://127.0.0.1:3333/act \
-  -H 'Content-Type: application/json' \
-  -d '{"ref":"<textbox_ref>","action":"type","value":"<post_text>"}'
 ```
+
+For scheduling that will actually be submitted, prefer the same text-entry strategy as `x-compose-post`:
+
+- connect to the existing Chrome instance with `Playwright over CDP`
+- enter text with `page.keyboard.type()`
+- verify `[data-testid="tweetTextarea_0"]` exactly matches the intended text before opening the schedule dialog
+
+Do not rely on the visible composer alone. X can show an enabled action state while the actual composer DOM is still out of sync.
 
 ### 4. Open the schedule dialog
 
@@ -196,3 +199,5 @@ kill $(lsof -ti:9222) 2>/dev/null
 - Always use `/snapshot` before each action to get fresh refs (refs change when the page navigates or dialogs open/close)
 - X's UI is dynamic; use both snapshots and screenshots to identify the correct elements
 - After setting the date/time, **always** click the "確認する" (Confirm) or "更新" (Update) button to apply the changes
+- Before final submission, verify the composer DOM text still matches the intended scheduled text
+- If `/act type` appears to work visually but `[data-testid="tweetTextarea_0"]` does not match, stop and switch to the CDP keyboard path instead of scheduling
