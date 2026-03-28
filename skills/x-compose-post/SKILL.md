@@ -7,7 +7,7 @@ description: Compose and send posts on X (Twitter) through ai-chrome-pilot. Use 
 
 Use ai-chrome-pilot to create X posts from one unified workflow, then branch into `post`, `reply`, `quote`, or `schedule` mode.
 
-Prefer this skill for all post-creation tasks. Use `x-schedule-post` only when a schedule-only flow is explicitly needed.
+Prefer this skill for broad post-creation tasks. Use `x-schedule-post` when a schedule-only flow is explicitly needed, and use `x-quote-post` when the user already knows the exact post they want to quote.
 
 Keep the skill profile-agnostic. Use `default` unless the user explicitly requested another profile.
 
